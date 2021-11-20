@@ -141,11 +141,13 @@ end
 local function seqxy(n,i,ii)
   val[i][ii]=n
   xy[3+((i-1)*2)]=circleseq({32,96+((i-1)*64)}, val[i])
+  redraw()
 end
 
 local function seqsetxy(n,i,ii,iii)
   valset[i][ii][iii]=n
   xy[4+((i-1)*2)]=circleseq({96,96+((i-1)*64)}, valset[i][ii])
+  redraw()
 end
 
 -- Clamps a number to within a certain range, with optional rounding
@@ -168,15 +170,17 @@ end
 function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset)
   while true do
     clock.sync(num/den)
-    counter[1] = ((counter[1] + 1) % (math.abs(range[1][2] - range[1][1])+1)) + range[1][1]
+    counter[1] = ((counter[1] - range[i][1] + 1) % (math.abs(range[1][2] - range[1][1])+1)) + range[1][1]
     if val[1][counter[1]+1]-1 > 0 then
       for i = 2, 5 do
-        counter[i] = ((counter[i] + 1) % (math.abs(range[i][2] - range[i][1])+1)) + range[i][1]
+        counter[i] = ((counter[i] - range[i][1] + 1) % (math.abs(range[i][2] - range[i][1])+1)) + range[i][1]
       end
       for i = 1, 5 do
-        if counter[i] == range[i][1] then
-          -- counter2[i][counter[i]+1] = ((counter2[i][counter[i]+1] + 1) % math.abs(range2[i][counter[i]+1][2]-range2[i][counter[i]+1][1])) + range2[i][counter[i]+1][1]
-          -- val[i][counter[i]+1] = valset[i][counter[i]+1][counter2[i][counter[i]]+1]
+        for ii = range[i][1]+1, range[i][2]+1 do
+          if counter[i] == ii then
+            counter2[i][ii] = ((counter2[i][ii] - range2[i][ii][1] + 1) % (math.abs(range2[i][ii][2] - range2[i][ii][1])+1)) + range2[i][ii][1]
+            val[i][ii] = valset[i][ii][counter2[i][ii]+1]
+          end
         end
         print("id: " .. i .. " count: " .. counter[i] .. " value: " .. val[i][counter[i]+1])
       end
@@ -268,7 +272,7 @@ function init()
   params:read()
   params:bang()
   
-  test = clock.run(fiveloop, 4, 1, fivecount, fivecount2, range, range2, serie, val, valset)
+  -- test = clock.run(fiveloop, 4, 1, fivecount, fivecount2, range, range2, serie, val, valset)
   
 end
 
@@ -453,7 +457,7 @@ function key(n, z)
       key2shiftmv = 0
     end
     if pos > 0 and z == 0 and key2shiftmv == 0 and key3shift == 0 then
-      fivecount[pos] = (fivecount[pos] - 1) % 5
+      fivecount[pos] = ((fivecount[pos] - range[pos][1] - 1) % (math.abs(range[pos][2] - range[pos][1])+1)) + range[pos][1]
     end
     if z == 0 then
       key2shift = 0
@@ -465,7 +469,7 @@ function key(n, z)
       key3shiftmv = 0
     end
     if screenpos > 0 and z == 0  and key2shift == 0 and key3shiftmv == 0 then
-      fivecount[pos] = (fivecount[pos] + 1) % 5
+      fivecount[pos] = ((fivecount[pos] - range[pos][1] + 1) % (math.abs(range[pos][2] - range[pos][1])+1)) + range[pos][1]
     end
     if z == 0 then
       key3shift = 0
