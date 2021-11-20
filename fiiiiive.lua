@@ -58,7 +58,7 @@ for i = 1, 5 do
   end
 end
 screenpos = 0
-pos = 1
+pos = 0
 fivecount = {0,0,0,0,0}
 fivecount2 = {}
 for i = 1, 5 do
@@ -127,7 +127,6 @@ local function circlepent(centro, raggio)
   return xy
 end
 
-
 local function arcangle(angle)
   angle = math.rad((angle+270)%360)
   return angle
@@ -149,16 +148,43 @@ local function seqsetxy(n,i,ii,iii)
   xy[4+((i-1)*2)]=circleseq({96,96+((i-1)*64)}, valset[i][ii])
 end
 
+-- Clamps a number to within a certain range, with optional rounding
+local function clamp(n, low, high) 
+  return math.min(math.max(n, low), high) 
+end
+
 -- screen transition
 local function scroll(d)
-  pos = (pos + d) % 5
   for i =1,8 do
-    screenpos = (screenpos + (8*d)) % 320
+    screenpos = clamp(screenpos + (8*d), 0, 256)
     clock.sleep(1/30)
     redraw()
   end
+  pos = clamp(pos+d,0,5)
+  print(pos)
 end
   
+-- clockwork
+function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset)
+  while true do
+    clock.sync(num/den)
+    counter[1] = ((counter[1] + 1) % (math.abs(range[1][2] - range[1][1])+1)) + range[1][1]
+    if val[1][counter[1]+1]-1 > 0 then
+      for i = 2, 5 do
+        counter[i] = ((counter[i] + 1) % (math.abs(range[i][2] - range[i][1])+1)) + range[i][1]
+      end
+      for i = 1, 5 do
+        if counter[i] == range[i][1] then
+          -- counter2[i][counter[i]+1] = ((counter2[i][counter[i]+1] + 1) % math.abs(range2[i][counter[i]+1][2]-range2[i][counter[i]+1][1])) + range2[i][counter[i]+1][1]
+          -- val[i][counter[i]+1] = valset[i][counter[i]+1][counter2[i][counter[i]]+1]
+        end
+        print("id: " .. i .. " count: " .. counter[i] .. " value: " .. val[i][counter[i]+1])
+      end
+    end
+  end
+  redraw()
+end
+
 function init()
   
   midi_in_device = midi.connect(1)
@@ -242,6 +268,8 @@ function init()
   params:read()
   params:bang()
   
+  test = clock.run(fiveloop, 4, 1, fivecount, fivecount2, range, range2, serie, val, valset)
+  
 end
 
 
@@ -307,7 +335,7 @@ function redraw()
     screen.line(xy[4][i][1]-(valset[1][fivecount[1]+1][i]),xy[4][i][2]-(valset[1][fivecount[1]+1][i]))
     screen.line(xy[4][i][1]+(valset[1][fivecount[1]+1][i]*2),xy[4][i][2]-(valset[1][fivecount[1]+1][i]))
     screen.close()
-    if i == 1 then screen.stroke() else screen.fill() end
+    if i == fivecount2[1][fivecount[1]+1]+1 then screen.stroke() else screen.fill() end
   end
   
 -- dur graph
@@ -321,7 +349,7 @@ function redraw()
     screen.level(6)
     screen.rect(xy[6][i][1]-valset[2][fivecount[2]+1][i],xy[6][i][2]-valset[2][fivecount[2]+1][i],valset[2][fivecount[2]+1][i]*2,valset[2][fivecount[2]+1][i]*2)
     screen.close()
-    if i == 1 then screen.stroke() else screen.fill() end
+    if i == fivecount2[2][fivecount[2]+1]+1 then screen.stroke() else screen.fill() end
   end
   
 -- note graph
@@ -345,7 +373,7 @@ function redraw()
       screen.line(xyp[5+i][ii][1],xyp[5+i][ii][2])
     end
     screen.close()
-    if inot == 1 then screen.stroke() else screen.fill() end
+    if i == fivecount2[3][fivecount[3]+1]+1 then screen.stroke() else screen.fill() end
   end
   
 -- octave graph
@@ -357,7 +385,7 @@ function redraw()
   for i = range2[4][fivecount[4]+1][1]+1, range2[4][fivecount[4]+1][2]+1 do 
     screen.level(6)
     screen.circle(xy[10][i][1],xy[10][i][2],valset[4][fivecount[4]+1][i]+1)
-    if i == 1 then screen.stroke() else screen.fill() end
+    if i == fivecount2[4][fivecount[4]+1]+1 then screen.stroke() else screen.fill() end
   end
   
   screen.translate(0,screenpos)
@@ -371,47 +399,43 @@ function enc(n, d)
   
   elseif n == 2 then
     if pos == 0 then
-      seriesel = (seriesel + d) % 5
-    end
-    for i = 1, 5 do
-      if pos == i and key2shift == 0 then
-        fivecount2[i][fivecount[i]+1] = (fivecount2[i][fivecount[i]+1] + d) % 5
-      end
-    end
-    for i = 1, 5 do
-      if pos == i and key2shift == 1 then
+      if key2shift == 0 and key3shift == 0 then
+        seriesel = (seriesel + d) % 5
+      elseif key2shift == 1 and key3shift == 0 then
         key2shiftmv = 1
-        range[i][1] = (range[i][1] + d) % 4
+        params:delta("serie_rng_" .. 1, d)
       end
-    end
-    for i = 1, 5 do
-      if pos == i and key3shift == 1 then
+    elseif pos > 0 then
+      if key2shift == 0 and key3shift == 0 then
+        fivecount2[pos][fivecount[pos]+1] = (fivecount2[pos][fivecount[pos]+1] + d) % 5
+      elseif key2shift == 1 and key3shift == 0 then
+        key2shiftmv = 1
+        params:delta("seq_rng_" .. pos .. "_" .. 1, d)
+      elseif key2shift == 0 and key3shift == 1 then
         key3shiftmv = 1
-        range2[i][fivecount[i]+1][1] = (range2[i][fivecount[i]+1][1] + d) % 5
+        params:delta("seq2_rng_" .. pos .. "_" .. fivecount[pos]+1 .. "_" .. 1, d)
       end
     end
  
   elseif n == 3 then
     if pos == 0 then
-      serie[seriesel+1] = (serie[seriesel+1]+d)%12
-      xy[1]=circleserie(serie, {32,32}, 24)
-      xy[2]=circleserie(serie, {32,32}, 16)
-    end
-    for i = 1, 5 do
-      if pos == i and key2shift == 1 then
+      if key2shift == 0 and key3shift == 0 then
+        serie[seriesel+1] = (serie[seriesel+1]+d)%12
+        xy[1]=circleserie(serie, {32,32}, 24)
+        xy[2]=circleserie(serie, {32,32}, 16)
+      elseif key2shift == 1 and key3shift == 0 then
         key2shiftmv = 1
-        range[i][2] = (range[i][2] + d) % 5
+        params:delta("serie_rng_" .. 2, d)
       end
-    end
-    for i = 1, 5 do
-      if pos == i and key3shift == 1 then
+    elseif pos > 0 then
+      if key2shift == 1 and key3shift == 0 then
+        key2shiftmv = 1
+        params:delta("seq_rng_" .. pos .. "_" .. 2, d)
+      elseif key2shift == 0 and key3shift == 1 then
         key3shiftmv = 1
-        range2[i][fivecount[i]+1][2] = (range2[i][fivecount[i]+1][2] + d) % 5
-      end
-    end
-    for i = 1, 5 do
-      if pos == i and key2shift == 0 then
-        valset[i][fivecount[i]+1] = (valset[i][fivecount[i]+1] + d) % 5
+        params:delta("seq2_rng_" .. pos .. "_" .. fivecount[pos]+1 .. "_" .. 2, d)
+      elseif key2shift == 0 and key3shift == 0 then
+        params:delta("seq_valset_" .. pos .. "_" .. fivecount[pos]+1 .. "_" .. fivecount2[pos][fivecount[pos]+1]+1, d)
       end
     end
 
@@ -429,7 +453,7 @@ function key(n, z)
       key2shiftmv = 0
     end
     if pos > 0 and z == 0 and key2shiftmv == 0 and key3shift == 0 then
-      fivecount[pos+1] = (fivecount[pos+1] - 1) % 5
+      fivecount[pos] = (fivecount[pos] - 1) % 5
     end
     if z == 0 then
       key2shift = 0
@@ -441,7 +465,7 @@ function key(n, z)
       key3shiftmv = 0
     end
     if screenpos > 0 and z == 0  and key2shift == 0 and key3shiftmv == 0 then
-      fivecount[(screenpos/64)] = (fivecount[(screenpos/64)] + 1) % 5
+      fivecount[pos] = (fivecount[pos] + 1) % 5
     end
     if z == 0 then
       key3shift = 0
