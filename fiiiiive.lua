@@ -25,8 +25,15 @@ for i = 1, 12 do
   ya12[i] = math.sin(math.rad((30*(i-1))-90))
 end
 local xy = {} -- positions
-for i = 1, 25 do
+for i = 1, 5 do
   xy[i] = {}
+end
+local xy2 = {} -- positions2
+for i = 1, 8 do
+  xy2[i] = {}
+  for ii = 1, 5 do
+    xy2[i][ii] = {}
+  end
 end
 local xyp = {}
 for i = 1, 10 do
@@ -140,14 +147,12 @@ end
 
 local function seqxy(n,i,ii)
   val[i][ii]=n
-  xy[3+((i-1)*2)]=circleseq({32,96+((i-1)*64)}, val[i])
-  redraw()
+  xy[i+2]=circleseq({32,96+((i-1)*64)}, val[i])
 end
 
 local function seqsetxy(n,i,ii,iii)
   valset[i][ii][iii]=n
-  xy[4+((i-1)*2)]=circleseq({96,96+((i-1)*64)}, valset[i][ii])
-  redraw()
+  xy2[i][ii]=circleseq({96,96+((i-1)*64)}, valset[i][ii])
 end
 
 -- Clamps a number to within a certain range, with optional rounding
@@ -335,9 +340,9 @@ function redraw()
   end
   for i = range2[1][fivecount[1]+1][1]+1, range2[1][fivecount[1]+1][2]+1 do 
     screen.level(6)
-    screen.move(xy[4][i][1]+(valset[1][fivecount[1]+1][i]),xy[4][i][2]+(valset[1][fivecount[1]+1][i]))
-    screen.line(xy[4][i][1]-(valset[1][fivecount[1]+1][i]),xy[4][i][2]-(valset[1][fivecount[1]+1][i]))
-    screen.line(xy[4][i][1]+(valset[1][fivecount[1]+1][i]*2),xy[4][i][2]-(valset[1][fivecount[1]+1][i]))
+    screen.move(xy2[1][fivecount[1]+1][i][1]+(valset[1][fivecount[1]+1][i]),xy2[1][fivecount[1]+1][i][2]+(valset[1][fivecount[1]+1][i]))
+    screen.line(xy2[1][fivecount[1]+1][i][1]-(valset[1][fivecount[1]+1][i]),xy2[1][fivecount[1]+1][i][2]-(valset[1][fivecount[1]+1][i]))
+    screen.line(xy2[1][fivecount[1]+1][i][1]+(valset[1][fivecount[1]+1][i]*2),xy2[1][fivecount[1]+1][i][2]-(valset[1][fivecount[1]+1][i]))
     screen.close()
     if i == fivecount2[1][fivecount[1]+1]+1 then screen.stroke() else screen.fill() end
   end
@@ -345,20 +350,20 @@ function redraw()
 -- dur graph
   for i = range[2][1]+1, range[2][2]+1 do 
     screen.level(6)
-    screen.rect(xy[5][i][1]-val[2][i],xy[5][i][2]-val[2][i],val[2][i]*2,val[2][i]*2)
+    screen.rect(xy[4][i][1]-val[2][i],xy[4][i][2]-val[2][i],val[2][i]*2,val[2][i]*2)
     screen.close()
     if i == fivecount[2]+1 then screen.stroke() else screen.fill() end
   end
-  for i = range2[2][fivecount[1]+1][1]+1, range2[2][fivecount[1]+1][2]+1 do
+  for i = range2[2][fivecount[2]+1][1]+1, range2[2][fivecount[2]+1][2]+1 do
     screen.level(6)
-    screen.rect(xy[6][i][1]-valset[2][fivecount[2]+1][i],xy[6][i][2]-valset[2][fivecount[2]+1][i],valset[2][fivecount[2]+1][i]*2,valset[2][fivecount[2]+1][i]*2)
+    screen.rect(xy2[2][fivecount[2]+1][i][1]-valset[2][fivecount[2]+1][i],xy2[2][fivecount[2]+1][i][2]-valset[2][fivecount[2]+1][i],valset[2][fivecount[2]+1][i]*2,valset[2][fivecount[2]+1][i]*2)
     screen.close()
     if i == fivecount2[2][fivecount[2]+1]+1 then screen.stroke() else screen.fill() end
   end
   
 -- note graph
   for i = 1, 5 do 
-    xyp[i] = circlepent(xy[7][i],val[3][i]+2)
+    xyp[i] = circlepent(xy[5][i],val[3][i]+2)
   end
   for i = range[3][1]+1, range[3][2]+1 do 
     screen.level(6)
@@ -369,7 +374,7 @@ function redraw()
     if i == fivecount[3]+1 then screen.stroke() else screen.fill() end
   end
   for i = 1, 5 do 
-    xyp[5+i] = circlepent(xy[8][i],valset[3][fivecount[3]+1][i]+2)
+    xyp[5+i] = circlepent(xy2[3][fivecount[3]+1][i],valset[3][fivecount[3]+1][i]+2)
   end
   for i = range2[3][fivecount[1]+1][1]+1, range2[3][fivecount[1]+1][2]+1 do 
     screen.level(6)
@@ -383,12 +388,12 @@ function redraw()
 -- octave graph
   for i = range[4][1]+1, range[4][2]+1 do
     screen.level(6)
-    screen.circle(xy[9][i][1],xy[9][i][2],val[4][i]+1)
+    screen.circle(xy[6][i][1],xy[6][i][2],val[4][i]+1)
     if i == fivecount[4]+1 then screen.stroke() else screen.fill() end
   end
   for i = range2[4][fivecount[4]+1][1]+1, range2[4][fivecount[4]+1][2]+1 do 
     screen.level(6)
-    screen.circle(xy[10][i][1],xy[10][i][2],valset[4][fivecount[4]+1][i]+1)
+    screen.circle(xy2[4][fivecount[4]+1][i][1],xy2[4][fivecount[4]+1][i][2],valset[4][fivecount[4]+1][i]+1)
     if i == fivecount2[4][fivecount[4]+1]+1 then screen.stroke() else screen.fill() end
   end
   
