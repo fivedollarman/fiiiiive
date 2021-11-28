@@ -41,10 +41,11 @@ for i = 1, 10 do
 end
 local serie = {0,4,5,7,9}
 local seriesel = 0
+local targets = {"amp","dur","notes","oct"}
 local val = {}
 local valset = {}
 for i = 1, 5 do
-  val[i] = {1,2,3,4,5}
+  val[i] = {5,5,5,5,5}
 end
 for i = 1, 5 do
   valset[i] = {}
@@ -73,6 +74,7 @@ for i = 1, 5 do
 end
 local key2shift, key2shiftmv = 0
 local key3shift, key2shiftmv = 0
+local seqplay = 0
 
 -- MIDI input
 local function midi_event(data)
@@ -168,38 +170,64 @@ local function scroll(d)
     redraw()
   end
   pos = clamp(pos+d,0,5)
-  print(pos)
+end
+
+function polyloop(list,note) -- todo
+  local rlist = {table.unpack(list)}
+  loopseq[note] = clock.run(fiveloop, 4, 1, fivecount, fivecount2, range, range2, serie, val, valset)
 end
   
 -- clockwork
 function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset)
+  local note = 0
   while true do
-    clock.sync(num/den)
-    counter[1] = ((counter[1] - range[i][1] + 1) % (math.abs(range[1][2] - range[1][1])+1)) + range[1][1]
-    if val[1][counter[1]+1]-1 > 0 then
-      for i = 2, 5 do
-        counter[i] = ((counter[i] - range[i][1] + 1) % (math.abs(range[i][2] - range[i][1])+1)) + range[i][1]
-      end
-      for i = 1, 5 do
-        for ii = range[i][1]+1, range[i][2]+1 do
-          if counter[i] == ii then
-            counter2[i][ii] = ((counter2[i][ii] - range2[i][ii][1] + 1) % (math.abs(range2[i][ii][2] - range2[i][ii][1])+1)) + range2[i][ii][1]
-            val[i][ii] = valset[i][ii][counter2[i][ii]+1]
-          end
-        end
-        print("id: " .. i .. " count: " .. counter[i] .. " value: " .. val[i][counter[i]+1])
+    for i = range[1][1]+1, range[1][2]+1 do
+      if counter[1]+1 == i then
+        seqxy(valset[1][i][counter2[1][i]+1],1,i)
+        counter2[1][i] = ((counter2[1][i] - range2[1][i][1] + 1) % (math.abs(range2[1][i][2] - range2[1][i][1])+1)) + range2[1][i][1]
       end
     end
+    if val[1][counter[1]+1]-1 > 0 then
+      for i = 2, 4 do
+        for ii = range[i][1]+1, range[i][2]+1 do
+          if counter[i]+1 == ii then
+            seqxy(valset[i][ii][counter2[i][ii]+1],i,ii)
+            counter2[i][ii] = ((counter2[i][ii] - range2[i][ii][1] + 1) % (math.abs(range2[i][ii][2] - range2[i][ii][1])+1)) + range2[i][ii][1]
+          end
+        end
+        counter[i] = ((counter[i] - range[i][1] + 1) % (math.abs(range[i][2] - range[i][1])+1)) + range[i][1]
+        print("id: " .. i .. " count: " .. counter[i] .. " value: " .. val[i][counter[i]+1])
+      end
+      note = serie[val[3][counter[3]+1]]+(12*val[4][counter[4]+1])
+      midi_out_device:note_on(note,val[1][counter[1]+1]*127,1)
+      noteoffs[note] = clock.run(fiveloopnoteoff,num,den,note,val[2][counter[2]+1])
+    end
+    redraw()
+    counter[1] = ((counter[1] - range[1][1] + 1) % (math.abs(range[1][2] - range[1][1])+1)) + range[1][1]
+    clock.sync(num/den)
   end
-  redraw()
+end
+
+function fiveloopnoteoff(num,den,note,dur)
+  clock.sync((num/den*2)*(dur-1))
+  midi_out_device:note_off(note,0,1)
 end
 
 function init()
   
+  midi_out_device = midi.connect(2)
+  midi_out_device.event = midi_event
+  
+  params:add{type = "number", id = "midi_out_device", name = "MIDI out Device", min = 1, max = 4, default = 1, action = function(value)
+    midi_in_device.event = nil
+    midi_in_device = midi.connect(value)
+    midi_in_device.event = midi_event
+  end}
+
   midi_in_device = midi.connect(1)
   midi_in_device.event = midi_event
   
-  params:add{type = "number", id = "midi_device", name = "MIDI Device", min = 1, max = 4, default = 1, action = function(value)
+  params:add{type = "number", id = "midi_in_device", name = "MIDI in Device", min = 1, max = 4, default = 1, action = function(value)
     midi_in_device.event = nil
     midi_in_device = midi.connect(value)
     midi_in_device.event = midi_event
@@ -222,30 +250,32 @@ function init()
   end
   params:set("serie_rng_2", 11)
   
-  for i = 1, 5 do
+  for i = 1, 4 do
+    params:add_separator("range " .. targets[i])
     for ii = 1, 2 do
-      params:add_control("seq_rng_" .. i .. "_" .. ii, "seq_range_" .. i .. "_" .. ii, controlspec.new(0, 4, "lin", 1, 0, ""))
-      params:set_action("seq_rng_" .. i .. "_" .. ii, function(x) range[i][ii]=x end)
+      params:add_control("seq_rng_" .. targets[i] .. "_" .. ii, "seq_range_" .. i .. "_" .. ii, controlspec.new(0, 4, "lin", 1, 0, ""))
+      params:set_action("seq_rng_" .. targets[i] .. "_" .. ii, function(x) range[i][ii]=x end)
     end
   end
-  for i = 1, 5 do
+  for i = 1, 4 do
     for ii = 2, 2 do
-      params:set("seq_rng_" .. i .. "_" .. ii, 4)
+      params:set("seq_rng_" .. targets[i] .. "_" .. ii, 4)
     end
   end
   
-  for i = 1, 5 do
+  for i = 1, 4 do
+    params:add_separator("setter range " .. targets[i])
     for ii = 1, 5 do
       for iii = 1, 2 do
-        params:add_control("seq2_rng_" .. i .. "_" .. ii .. "_" .. iii, "seq2_range_" .. i .. "_" .. ii .. "_" .. iii, controlspec.new(0, 4, "lin", 1, 0, ""))
-        params:set_action("seq2_rng_" .. i .. "_" .. ii .. "_" .. iii, function(x) range2[i][ii][iii]=x end)
+        params:add_control("seq2_rng_" .. targets[i] .. "_" .. ii .. "_" .. iii, "seq2_range_" .. i .. "_" .. ii .. "_" .. iii, controlspec.new(0, 4, "lin", 1, 0, ""))
+        params:set_action("seq2_rng_" .. targets[i] .. "_" .. ii .. "_" .. iii, function(x) range2[i][ii][iii]=x end)
       end
     end
   end
-  for i = 1, 5 do
+  for i = 1, 4 do
     for ii = 1, 5 do
       for iii = 2, 2 do
-        params:set("seq2_rng_" .. i .. "_" .. ii .. "_" .. iii, 4)
+        params:set("seq2_rng_" .. targets[i] .. "_" .. ii .. "_" .. iii, 4)
       end
     end
   end
@@ -257,18 +287,20 @@ function init()
     params:set_action("serie_" .. i, function(x) seriexy(x,i) end)
   end
   
-  for i = 1, 5 do
+  for i = 1, 4 do
+    params:add_separator("values " .. targets[i])
     for ii = 1, 5 do
-      params:add_control("seq_val_" .. i .. "_" .. ii, "seq_set_value_" .. i .. "_" .. ii, controlspec.new(1, 5, "lin", 1, ii, ""))
-      params:set_action("seq_val_" .. i .. "_" .. ii, function(x) seqxy(x,i,ii) end)
+      params:add_control("seq_val_" .. targets[i] .. "_" .. ii, "seq_set_value_" .. i .. "_" .. ii, controlspec.new(1, 5, "lin", 1, ii, ""))
+      params:set_action("seq_val_" .. targets[i] .. "_" .. ii, function(x) seqxy(x,i,ii) end)
     end
   end
   
-  for i = 1, 5 do
+  for i = 1, 4 do
+    params:add_separator("value setters " .. targets[i])
     for ii = 1, 5 do
       for iii = 1, 5 do
-        params:add_control("seq_valset_" .. i .. "_" .. ii .. "_" .. iii, "seq_valset_" .. i .. "_" .. ii .. "_" .. iii, controlspec.new(1, 5, "lin", 1, iii, ""))
-        params:set_action("seq_valset_" .. i .. "_" .. ii .. "_" .. iii, function(x) seqsetxy(x,i,ii,iii) end)
+        params:add_control("seq_valset_" .. targets[i] .. "_" .. ii .. "_" .. iii, "seq_valset_" .. i .. "_" .. ii .. "_" .. iii, controlspec.new(1, 5, "lin", 1, iii, ""))
+        params:set_action("seq_valset_" .. targets[i] .. "_" .. ii .. "_" .. iii, function(x) seqsetxy(x,i,ii,iii) end)
       end
     end
   end
@@ -291,41 +323,55 @@ function redraw()
   screen.translate(0,-(screenpos))
   
   screen.level(3)
-  screen.arc(32,32,24,arcangle(ranges[1]*30),arcangle(ranges[2]*30))
+  screen.arc(32,32,24,arcangle(ranges[1]*30),arcangle((ranges[2]+0.999)*30))
   screen.stroke()
   screen.arc(96,32,24,arcangle(0),arcangle(359))
   screen.stroke()
   
-  screen.arc(32,96,20,arcangle(range[1][1]*72),arcangle(range[1][2]*72))
+  screen.arc(32,96,20,arcangle(range[1][1]*72),arcangle((range[1][2]+0.999)*72))
   screen.stroke()
-  screen.arc(96,96,20,arcangle(range2[1][1][1]*72),arcangle(range2[1][1][2]*72))
-  screen.stroke()
-  
-  screen.arc(32,160,20,arcangle(range[2][1]*72),arcangle(range[2][2]*72))
-  screen.stroke()
-  screen.arc(96,160,20,arcangle(range2[2][fivecount[2]+1][1]*72),arcangle(range2[2][fivecount[2]+1][2]*72))
+  screen.arc(96,96,20,arcangle(range2[1][fivecount[1]+1][1]*72),arcangle((range2[1][fivecount[1]+1][2]+0.999)*72))
   screen.stroke()
   
-  screen.arc(32,224,20,arcangle(range[3][1]*72),arcangle(range[3][2]*72))
+  screen.arc(32,160,20,arcangle(range[2][1]*72),arcangle((range[2][2]+0.999)*72))
   screen.stroke()
-  screen.arc(96,224,20,arcangle(range2[3][fivecount[3]+1][1]*72),arcangle(range2[3][fivecount[3]+1][2]*72))
+  screen.arc(96,160,20,arcangle(range2[2][fivecount[2]+1][1]*72),arcangle((range2[2][fivecount[2]+1][2]+0.999)*72))
   screen.stroke()
   
-  screen.arc(32,288,20,arcangle(range[4][1]*72),arcangle(range[4][2]*72))
+  screen.arc(32,224,20,arcangle(range[3][1]*72),arcangle((range[3][2]+0.999)*72))
   screen.stroke()
-  screen.arc(96,288,20,arcangle(range2[4][fivecount[4]+1][1]*72),arcangle(range2[4][fivecount[4]+1][2]*72))
+  screen.arc(96,224,20,arcangle(range2[3][fivecount[3]+1][1]*72),arcangle((range2[3][fivecount[3]+1][2]+0.999)*72))
+  screen.stroke()
+  
+  screen.arc(32,288,20,arcangle(range[4][1]*72),arcangle((range[4][2]+0.999)*72))
+  screen.stroke()
+  screen.arc(96,288,20,arcangle(range2[4][fivecount[4]+1][1]*72),arcangle((range2[4][fivecount[4]+1][2]+0.999)*72))
   screen.stroke()
   
 -- serie graph  
   for i = 1, 5 do 
-    screen.level(6)
-    screen.circle(xy[1][i][1],xy[1][i][2],4)
-    if seriesel + 1 == i then screen.stroke() else screen.fill() end
+    if serie[i] >= ranges[1] and serie[i] <= ranges[2] then
+      screen.level(6)
+      screen.circle(xy[1][i][1],xy[1][i][2],4)
+      if seriesel + 1 == i then screen.stroke() else screen.fill() end
+    end
   end
   for i = 1, 5 do
     screen.level(3)
     screen.move(xy[2][i][1],xy[2][i][2])
     screen.line(xy[2][(i%5)+1][1],xy[2][(i%5)+1][2])
+    screen.stroke()
+  end
+  
+  if seqplay == 1 then
+    screen.level(6)
+    screen.move(85,20)
+    screen.line(109,32)
+    screen.line(85,44)
+    screen.close()
+    screen.stroke()
+  else
+    screen.rect(85,20,24,24)
     screen.stroke()
   end
   
@@ -376,7 +422,7 @@ function redraw()
   for i = 1, 5 do 
     xyp[5+i] = circlepent(xy2[3][fivecount[3]+1][i],valset[3][fivecount[3]+1][i]+2)
   end
-  for i = range2[3][fivecount[1]+1][1]+1, range2[3][fivecount[1]+1][2]+1 do 
+  for i = range2[3][fivecount[3]+1][1]+1, range2[3][fivecount[3]+1][2]+1 do 
     screen.level(6)
     for ii = 1, 5 do
       screen.line(xyp[5+i][ii][1],xyp[5+i][ii][2])
@@ -419,10 +465,10 @@ function enc(n, d)
         fivecount2[pos][fivecount[pos]+1] = (fivecount2[pos][fivecount[pos]+1] + d) % 5
       elseif key2shift == 1 and key3shift == 0 then
         key2shiftmv = 1
-        params:delta("seq_rng_" .. pos .. "_" .. 1, d)
+        params:delta("seq_rng_" .. targets[pos] .. "_" .. 1, d)
       elseif key2shift == 0 and key3shift == 1 then
         key3shiftmv = 1
-        params:delta("seq2_rng_" .. pos .. "_" .. fivecount[pos]+1 .. "_" .. 1, d)
+        params:delta("seq2_rng_" .. targets[pos] .. "_" .. fivecount[pos]+1 .. "_" .. 1, d)
       end
     end
  
@@ -439,12 +485,12 @@ function enc(n, d)
     elseif pos > 0 then
       if key2shift == 1 and key3shift == 0 then
         key2shiftmv = 1
-        params:delta("seq_rng_" .. pos .. "_" .. 2, d)
+        params:delta("seq_rng_" .. targets[pos] .. "_" .. 2, d)
       elseif key2shift == 0 and key3shift == 1 then
         key3shiftmv = 1
-        params:delta("seq2_rng_" .. pos .. "_" .. fivecount[pos]+1 .. "_" .. 2, d)
+        params:delta("seq2_rng_" .. targets[pos] .. "_" .. fivecount[pos]+1 .. "_" .. 2, d)
       elseif key2shift == 0 and key3shift == 0 then
-        params:delta("seq_valset_" .. pos .. "_" .. fivecount[pos]+1 .. "_" .. fivecount2[pos][fivecount[pos]+1]+1, d)
+        params:delta("seq_valset_" .. targets[pos] .. "_" .. fivecount[pos]+1 .. "_" .. fivecount2[pos][fivecount[pos]+1]+1, d)
       end
     end
 
@@ -461,6 +507,19 @@ function key(n, z)
       key2shift = 1
       key2shiftmv = 0
     end
+    if pos == 0 and z == 0 then
+        seqplay = (seqplay + 1) % 2
+        if seqplay == 1 then
+          player = clock.run(fiveloop, 1, 1, fivecount, fivecount2, range, range2, serie, val, valset)
+        else 
+          fivecount = {0,0,0,0,0}
+          fivecount2 = {}
+          for i = 1, 5 do
+            fivecount2[i] = {0,0,0,0,0}
+          end
+          clock.cancel(player)
+        end
+      end
     if pos > 0 and z == 0 and key2shiftmv == 0 and key3shift == 0 then
       fivecount[pos] = ((fivecount[pos] - range[pos][1] - 1) % (math.abs(range[pos][2] - range[pos][1])+1)) + range[pos][1]
     end
