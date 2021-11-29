@@ -74,7 +74,8 @@ for i = 1, 5 do
 end
 local key2shift, key2shiftmv = 0
 local key3shift, key2shiftmv = 0
-local seqplay = 0
+seqplay = {"stop","play"}
+noteoffs = {}
 
 -- MIDI input
 local function midi_event(data)
@@ -172,12 +173,27 @@ local function scroll(d)
   pos = clamp(pos+d,0,5)
 end
 
+-- clockwork ----------------------------------------------------------------------------------------
+
+function playloop(option)
+  seqplay = option
+  if seqplay == 2 then
+    player = clock.run(fiveloop, 1, 1, fivecount, fivecount2, range, range2, serie, val, valset)
+  else 
+    fivecount = {0,0,0,0,0}
+    fivecount2 = {}
+    for i = 1, 5 do
+      fivecount2[i] = {0,0,0,0,0}
+    end
+    if player then clock.cancel(player) end
+  end
+end
+
 function polyloop(list,note) -- todo
   local rlist = {table.unpack(list)}
   loopseq[note] = clock.run(fiveloop, 4, 1, fivecount, fivecount2, range, range2, serie, val, valset)
 end
   
--- clockwork
 function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset)
   local note = 0
   while true do
@@ -209,9 +225,11 @@ function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset
 end
 
 function fiveloopnoteoff(num,den,note,dur)
-  clock.sync((num/den*2)*(dur-1))
+  clock.sync((num/den*2)*dur)
   midi_out_device:note_off(note,0,1)
 end
+
+-----------------------------------------------------------------------------------------------------------------
 
 function init()
   
@@ -241,6 +259,9 @@ function init()
   table.insert(channels, "MPE")
   params:add{type = "option", id = "midi_channel", name = "MIDI Channel", options = channels}
   params:add{type = "number", id = "bend_range", name = "Pitch Bend Range", min = 1, max = 48, default = 2}
+  
+  params:add_option("play","play",seqplay,1)
+  params:set_action("play", function(x) playloop(x) end)
   
   params:add_separator("ranges")
   
@@ -309,8 +330,6 @@ function init()
   params:read()
   params:bang()
   
-  -- test = clock.run(fiveloop, 4, 1, fivecount, fivecount2, range, range2, serie, val, valset)
-  
 end
 
 
@@ -363,7 +382,7 @@ function redraw()
     screen.stroke()
   end
   
-  if seqplay == 1 then
+  if seqplay == 2 then
     screen.level(6)
     screen.move(85,20)
     screen.line(109,32)
@@ -508,17 +527,7 @@ function key(n, z)
       key2shiftmv = 0
     end
     if pos == 0 and z == 0 then
-        seqplay = (seqplay + 1) % 2
-        if seqplay == 1 then
-          player = clock.run(fiveloop, 1, 1, fivecount, fivecount2, range, range2, serie, val, valset)
-        else 
-          fivecount = {0,0,0,0,0}
-          fivecount2 = {}
-          for i = 1, 5 do
-            fivecount2[i] = {0,0,0,0,0}
-          end
-          clock.cancel(player)
-        end
+        params:set("play", (((seqplay-1) + 1) % 2) + 1)
       end
     if pos > 0 and z == 0 and key2shiftmv == 0 and key3shift == 0 then
       fivecount[pos] = ((fivecount[pos] - range[pos][1] - 1) % (math.abs(range[pos][2] - range[pos][1])+1)) + range[pos][1]
