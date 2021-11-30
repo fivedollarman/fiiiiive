@@ -178,7 +178,7 @@ end
 function playloop(option)
   seqplay = option
   if seqplay == 2 then
-    player = clock.run(fiveloop, 1, 1, fivecount, fivecount2, range, range2, serie, val, valset)
+    player = clock.run(fiveloop, 1, 4, fivecount, fivecount2, range, range2, serie, val, valset)
   else 
     fivecount = {0,0,0,0,0}
     fivecount2 = {}
@@ -196,6 +196,7 @@ end
   
 function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset)
   local note = 0
+  local vel = 0
   while true do
     for i = range[1][1]+1, range[1][2]+1 do
       if counter[1]+1 == i then
@@ -212,11 +213,13 @@ function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset
           end
         end
         counter[i] = ((counter[i] - range[i][1] + 1) % (math.abs(range[i][2] - range[i][1])+1)) + range[i][1]
-        print("id: " .. i .. " count: " .. counter[i] .. " value: " .. val[i][counter[i]+1])
+        -- print("id: " .. i .. " count: " .. counter[i] .. " value: " .. val[i][counter[i]+1])
       end
-      note = serie[val[3][counter[3]+1]]+(12*val[4][counter[4]+1])
-      midi_out_device:note_on(note,val[1][counter[1]+1]*127,1)
+      note = serie[val[3][counter[3]+1]]+(12*val[4][counter[4]+1])+36
+      vel = val[1][counter[1]+1]*30
+      midi_out_device:note_on(note,vel,1)
       noteoffs[note] = clock.run(fiveloopnoteoff,num,den,note,val[2][counter[2]+1])
+      print("note: " .. note .. " vel: " .. vel)
     end
     redraw()
     counter[1] = ((counter[1] - range[1][1] + 1) % (math.abs(range[1][2] - range[1][1])+1)) + range[1][1]
