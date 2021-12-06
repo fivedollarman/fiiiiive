@@ -18,7 +18,7 @@ key2 + enc2 or enc3 -> serie range<br>
 key3 + enc2 or enc3 -> tempo signature numerator and denominator<br>
 
 <b>Other circles</b><br>
-triangles are amplitudes, squares are durations, pentagons are serie select, and circles of circles are octaves<br>
+triangles are amplitudes, squares are durations, pentagons are serie selections, and circles of circles are octaves<br>
 key2 -> master step backward<br>
 key3 -> master step forward<br>
 enc2 -> setting step by cycles step select<br>
