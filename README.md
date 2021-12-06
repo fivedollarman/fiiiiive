@@ -1,5 +1,5 @@
 # fiiiiive
-sort of alchemic sequencer for monome norns, sequencing five by five to escape tonality.
+Sort of alchemic sequencer for monome norns, sequencing five by five to escape tonality.
 A cryptic way to generate sequences that can be played by MIDI notes.
 
 # requirements
