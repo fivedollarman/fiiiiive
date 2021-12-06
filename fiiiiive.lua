@@ -1,12 +1,11 @@
--- fiiiiive: sequence
+-- fiiiiive: sequencing
 --                  five
 --       d('u')b       by five
 -- 1.0.0 @marcocinque 
 -- llllllll.co/
--- enc1 > ..
--- key3 & key4 > ..
--- enc3 & enc4 > ..
---
+-- enc1 -> scroll
+-- on first circles | key2 -> play | key3 + enc1 -> preset | key3 + key2 -> save
+-- all circels | key1 or key2 + enc2 or enc3 -> ranges
 
 engine.name = "PolyPerc"
 
@@ -72,9 +71,14 @@ fivecount2 = {}
 for i = 1, 5 do
   fivecount2[i] = {0,0,0,0,0}
 end
+local tden = 16
+local tnum = 1
+local psetnum = 1
 local key2shift, key2shiftmv = 0
-local key3shift, key2shiftmv = 0
+local key3shift, key3shiftmv, key3pstmv = 0
+local arraynote = {}
 seqplay = {"stop","play"}
+loopseq = {}
 noteoffs = {}
 
 -- MIDI input
@@ -87,9 +91,15 @@ local function midi_event(data)
     
     -- Note off
     if msg.type == "note_off" then
+      arraynote[msg.note] = 0
+      print("noteoff " .. msg.note)
+      clock.cancel(loopseq[msg.note])
     
     -- Note on
     elseif msg.type == "note_on" then
+      arraynote[msg.note] = 1
+      print("noteon " .. msg.note)
+      polyloop(msg.note,msg.vel)
      
     -- Pitch bend
     elseif msg.type == "pitchbend" then
@@ -178,7 +188,7 @@ end
 function playloop(option)
   seqplay = option
   if seqplay == 2 then
-    player = clock.run(fiveloop, 1, 4, fivecount, fivecount2, range, range2, serie, val, valset)
+    player = clock.run(fiveloop, tnum, tden/4, fivecount, fivecount2, range, range2, serie, val, valset, {60,127})
   else 
     fivecount = {0,0,0,0,0}
     fivecount2 = {}
@@ -189,14 +199,31 @@ function playloop(option)
   end
 end
 
-function polyloop(list,note) -- todo
-  local rlist = {table.unpack(list)}
-  loopseq[note] = clock.run(fiveloop, 4, 1, fivecount, fivecount2, range, range2, serie, val, valset)
+function polyloop(note,velocity) -- midi playing sequences
+  local fivecountp = {table.unpack(fivecount)}
+  local fivecount2p = {table.unpack(fivecount2)}
+  local valp = {table.unpack(val)}
+  local valsetp = {table.unpack(valset)}
+  local offset = {note, velocity}
+  loopseq[note] = clock.run(fiveloop, tnum, tden/4, fivecountp, fivecount2p, range, range2, serie, valp, valsetp, offset)
 end
   
-function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset)
+function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset, offset)
   local note = 0
   local vel = 0
+  local noteoffset = 0
+  local serieindex = {}
+  local serienidexlast = 0
+  for i = 1, 12 do
+    for ii = 1, 5 do
+      if i == serie[ii] then
+        serieindex[i] = serie[ii]
+        seriendexlast = serie[ii]
+      else
+        serieindex[i] = seriendexlast
+      end
+    end
+  end
   while true do
     for i = range[1][1]+1, range[1][2]+1 do
       if counter[1]+1 == i then
@@ -215,11 +242,12 @@ function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset
         counter[i] = ((counter[i] - range[i][1] + 1) % (math.abs(range[i][2] - range[i][1])+1)) + range[i][1]
         -- print("id: " .. i .. " count: " .. counter[i] .. " value: " .. val[i][counter[i]+1])
       end
-      note = serie[val[3][counter[3]+1]]+(12*val[4][counter[4]+1])+36
-      vel = val[1][counter[1]+1]*30
+      noteoffset = serieindex[(offset[1]%12)+1] + (math.floor(offset[1]/12)*12) - 60 
+      note = clamp(serie[val[3][counter[3]+1]]+(12*val[4][counter[4]+1])+24+noteoffset,0,127)
+      vel = clamp(((val[1][counter[1]+1]-1)/4)*offset[2],0,127)
       midi_out_device:note_on(note,vel,1)
       noteoffs[note] = clock.run(fiveloopnoteoff,num,den,note,val[2][counter[2]+1])
-      print("note: " .. note .. " vel: " .. vel)
+      -- print("note: " .. note .. " vel: " .. vel)
     end
     redraw()
     counter[1] = ((counter[1] - range[1][1] + 1) % (math.abs(range[1][2] - range[1][1])+1)) + range[1][1]
@@ -265,6 +293,12 @@ function init()
   
   params:add_option("play","play",seqplay,1)
   params:set_action("play", function(x) playloop(x) end)
+  
+  params:add_control("tempo_num", "tempo numerator", controlspec.new(1, 24, "lin", 1, 1, ""))
+  params:set_action("tempo_num", function(x) tnum=x end)
+  
+  params:add_control("tempo_den", "tempo denominator", controlspec.new(1, 24, "lin", 1, 8, ""))
+  params:set_action("tempo_den", function(x) tden=x end)
   
   params:add_separator("ranges")
   
@@ -347,7 +381,9 @@ function redraw()
   screen.level(3)
   screen.arc(32,32,24,arcangle(ranges[1]*30),arcangle((ranges[2]+0.999)*30))
   screen.stroke()
-  screen.arc(96,32,24,arcangle(0),arcangle(359))
+  screen.arc(96,32,20,arcangle(0),arcangle(14.999*tnum))
+  screen.stroke()
+  screen.arc(96,32,24,arcangle(0),arcangle(14.999*tden))
   screen.stroke()
   
   screen.arc(32,96,20,arcangle(range[1][1]*72),arcangle((range[1][2]+0.999)*72))
@@ -370,6 +406,19 @@ function redraw()
   screen.arc(96,288,20,arcangle(range2[4][fivecount[4]+1][1]*72),arcangle((range2[4][fivecount[4]+1][2]+0.999)*72))
   screen.stroke()
   
+  for i = 0, psetnum do
+    screen.move(i*4,0)
+    screen.pixel(i*4,0)
+    screen.fill()
+  end
+  
+  for i = 1,128 do
+    if arraynote[i] == 1 then screen.level(8) else screen.level(0) end
+    screen.move(i,63)
+    screen.pixel(i,63)
+    screen.fill()
+  end
+  
 -- serie graph  
   for i = 1, 5 do 
     if serie[i] >= ranges[1] and serie[i] <= ranges[2] then
@@ -387,13 +436,13 @@ function redraw()
   
   if seqplay == 2 then
     screen.level(6)
-    screen.move(85,20)
-    screen.line(109,32)
-    screen.line(85,44)
+    screen.move(87,22)
+    screen.line(106,32)
+    screen.line(87,42)
     screen.close()
     screen.stroke()
   else
-    screen.rect(85,20,24,24)
+    screen.rect(87,22,20,20)
     screen.stroke()
   end
   
@@ -471,8 +520,11 @@ end
 
 
 function enc(n, d)
-  if n == 1 then
+  if n == 1 and key3shift == 0 then
     scrollscreen = clock.run(scroll,d)
+  elseif n == 1 and key3shift == 1 then
+    psetnum = (psetnum + d) % 32
+    key3pstmv = 1
   
   elseif n == 2 then
     if pos == 0 then
@@ -481,6 +533,9 @@ function enc(n, d)
       elseif key2shift == 1 and key3shift == 0 then
         key2shiftmv = 1
         params:delta("serie_rng_" .. 1, d)
+      elseif key2shift == 0 and key3shift == 1 then
+        key3shiftmv = 1
+        params:delta("tempo_num", d)
       end
     elseif pos > 0 then
       if key2shift == 0 and key3shift == 0 then
@@ -497,12 +552,15 @@ function enc(n, d)
   elseif n == 3 then
     if pos == 0 then
       if key2shift == 0 and key3shift == 0 then
-        serie[seriesel+1] = (serie[seriesel+1]+d)%12
+        params:set("serie_" .. seriesel+1, (serie[seriesel+1]+d)%12)
         xy[1]=circleserie(serie, {32,32}, 24)
         xy[2]=circleserie(serie, {32,32}, 16)
       elseif key2shift == 1 and key3shift == 0 then
         key2shiftmv = 1
         params:delta("serie_rng_" .. 2, d)
+      elseif key2shift == 0 and key3shift == 1 then
+        key3shiftmv = 1
+        params:delta("tempo_den", d)
       end
     elseif pos > 0 then
       if key2shift == 1 and key3shift == 0 then
@@ -529,10 +587,12 @@ function key(n, z)
       key2shift = 1
       key2shiftmv = 0
     end
-    if pos == 0 and z == 0 then
+    if pos == 0 and z == 0 and key2shiftmv == 0 and key3shift == 0 then
         params:set("play", (((seqplay-1) + 1) % 2) + 1)
-      end
-    if pos > 0 and z == 0 and key2shiftmv == 0 and key3shift == 0 then
+    elseif pos == 0 and z == 0 and key2shiftmv == 0 and key3shift == 1 then
+      params:write(psetnum)
+      key3shiftmv = 1
+    elseif pos > 0 and z == 0 and key2shiftmv == 0 and key3shift == 0 then
       fivecount[pos] = ((fivecount[pos] - range[pos][1] - 1) % (math.abs(range[pos][2] - range[pos][1])+1)) + range[pos][1]
     end
     if z == 0 then
@@ -543,8 +603,12 @@ function key(n, z)
     if z == 1 then
       key3shift = 1
       key3shiftmv = 0
+      key3pstmv = 0
     end
-    if screenpos > 0 and z == 0  and key2shift == 0 and key3shiftmv == 0 then
+    if screenpos == 0 and z == 0 and key3pstmv == 1 then
+      params:read(psetnum)
+      params:bang()
+    elseif screenpos > 0 and z == 0  and key2shift == 0 and key3shiftmv == 0 then
       fivecount[pos] = ((fivecount[pos] - range[pos][1] + 1) % (math.abs(range[pos][2] - range[pos][1])+1)) + range[pos][1]
     end
     if z == 0 then
