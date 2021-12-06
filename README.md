@@ -19,12 +19,12 @@ key3 + enc2 or enc3 -> tempo signature numerator and denominator<br>
 
 <b>Other circles</b><br>
 triangles are amplitudes, squares are durations, pentagons are serie selections, and circles of circles are octaves<br>
-key2 -> master step backward<br>
-key3 -> master step forward<br>
+key2 -> circle master step backward<br>
+key3 -> circle master step forward<br>
 enc2 -> setting step by cycles step select<br>
 enc3 -> setting step by cycles step set<br>
 key2 + enc2 or enc3 -> set master sequence range<br>
-key2 + enc2 or enc3 -> set setting sequences ranges<br>
+key3 + enc2 or enc3 -> set setting sequences ranges<br>
 
 
 # installation
