@@ -92,13 +92,11 @@ local function midi_event(data)
     -- Note off
     if msg.type == "note_off" then
       arraynote[msg.note] = 0
-      print("noteoff " .. msg.note)
       clock.cancel(loopseq[msg.note])
     
     -- Note on
     elseif msg.type == "note_on" then
       arraynote[msg.note] = 1
-      print("noteon " .. msg.note)
       polyloop(msg.note,msg.vel)
      
     -- Pitch bend
@@ -187,8 +185,9 @@ end
 
 function playloop(option)
   seqplay = option
+  local offset = {60,127}
   if seqplay == 2 then
-    player = clock.run(fiveloop, tnum, tden/4, fivecount, fivecount2, range, range2, serie, val, valset, {60,127})
+    player = clock.run(fiveloop, tnum, tden/4, fivecount, fivecount2, range, range2, serie, val, valset, offset)
   else 
     fivecount = {0,0,0,0,0}
     fivecount2 = {}
@@ -213,14 +212,14 @@ function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset
   local vel = 0
   local noteoffset = 0
   local serieindex = {}
-  local serienidexlast = 0
+  local serieindexlast = 0
   for i = 1, 12 do
     for ii = 1, 5 do
       if i == serie[ii] then
         serieindex[i] = serie[ii]
         seriendexlast = serie[ii]
       else
-        serieindex[i] = seriendexlast
+        serieindex[i] = serieindexlast
       end
     end
   end
