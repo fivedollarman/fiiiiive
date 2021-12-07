@@ -2,7 +2,7 @@
 --                  five
 --       d('u')b       by five
 -- 1.0.0 @marcocinque 
--- llllllll.co/t/fiiiiive-alchemic-sequencer-for-norns
+-- llllllll.co/
 -- enc1 -> scroll
 -- on first circles | key2 -> play | key3 + enc1 -> preset | key3 + key2 -> save
 -- all circels | key1 or key2 + enc2 or enc3 -> ranges
@@ -245,7 +245,7 @@ function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset
       noteoffset = serieindex[(offset[1]%12)+1] + (math.floor(offset[1]/12)*12) - 60 
       note = clamp(serie[val[3][counter[3]+1]]+(12*val[4][counter[4]+1])+24+noteoffset,0,127)
       vel = clamp(((val[1][counter[1]+1]-1)/4)*offset[2],0,127)
-      midi_out_device:note_on(note,vel,1)
+      midi_out_device:note_on(note,vel,params:get("midi_channel"))
       noteoffs[note] = clock.run(fiveloopnoteoff,num,den,note,val[2][counter[2]+1])
       -- print("note: " .. note .. " vel: " .. vel)
     end
@@ -288,7 +288,7 @@ function init()
   end
   
   table.insert(channels, "MPE")
-  params:add{type = "option", id = "midi_channel", name = "MIDI Channel", options = channels}
+  params:add{type = "option", id = "midi_channel", name = "MIDI out Channel", options = channels}
   params:add{type = "number", id = "bend_range", name = "Pitch Bend Range", min = 1, max = 48, default = 2}
   
   params:add_option("play","play",seqplay,1)
