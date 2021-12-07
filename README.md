@@ -5,7 +5,7 @@ A cryptic way to generate sequences that can be also played by MIDI notes.
 https://www.youtube.com/watch?v=hJ4rc51NJ-M
 
 # requirements
-norns, MIDI
+norns, MIDI in and out
 
 # documentation
 enc 1 -> circles scroll<br>
