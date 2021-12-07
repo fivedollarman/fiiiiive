@@ -282,12 +282,11 @@ function init()
     midi_in_device.event = midi_event
   end}
   
-  local channels = {"All"}
+  local channels = {}
   for i = 1, 16 do 
     table.insert(channels, i) 
   end
   
-  table.insert(channels, "MPE")
   params:add{type = "option", id = "midi_channel", name = "MIDI out Channel", options = channels}
   params:add{type = "number", id = "bend_range", name = "Pitch Bend Range", min = 1, max = 48, default = 2}
   
