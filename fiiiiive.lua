@@ -2,7 +2,7 @@
 --                  five
 --       d('u')b       by five
 -- 1.0.0 @marcocinque 
--- llllllll.co/
+-- llllllll.co/t/fiiiiive-alchemic-sequencer-for-norns
 -- enc1 -> scroll
 -- on first circles | key2 -> play | key3 + enc1 -> preset | key3 + key2 -> save
 -- all circels | key1 or key2 + enc2 or enc3 -> ranges
