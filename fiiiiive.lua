@@ -4,8 +4,8 @@
 -- 1.0.0 @marcocinque 
 -- llllllll.co/t/fiiiiive-alchemic-sequencer-for-norns
 -- enc1 -> scroll
--- on first circles | key2 -> play | key3 + enc1 -> preset | key3 + key2 -> save
--- all circels | key1 or key2 + enc2 or enc3 -> ranges
+-- 1st crls key2->play key3+enc1->preset key3+key2->save
+-- all crcls key1/key2+enc2/enc3->ranges
 
 engine.name = "PolyPerc"
 
