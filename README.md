@@ -25,8 +25,8 @@ key2 -> circle master step backward<br>
 key3 -> circle master step forward<br>
 enc2 -> setting step by cycles step select<br>
 enc3 -> setting step by cycles step set<br>
-key2 + enc2 or enc3 -> set master sequence range<br>
-key3 + enc2 or enc3 -> set setting sequences ranges<br>
+key2 + enc2 or enc3 -> set master sequence's loop range<br>
+key3 + enc2 or enc3 -> set setting sequences' loop ranges<br>
 
 
 # installation
