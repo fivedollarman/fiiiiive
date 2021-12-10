@@ -267,9 +267,9 @@ function init()
   midi_out_device.event = midi_event
   
   params:add{type = "number", id = "midi_out_device", name = "MIDI out Device", min = 1, max = 4, default = 1, action = function(value)
-    midi_in_device.event = nil
-    midi_in_device = midi.connect(value)
-    midi_in_device.event = midi_event
+    midi_out_device.event = nil
+    midi_out_device = midi.connect(value)
+    midi_out_device.event = midi_event
   end}
 
   midi_in_device = midi.connect(1)
