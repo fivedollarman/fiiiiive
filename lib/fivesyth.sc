@@ -121,11 +121,9 @@ Fivesynth {
 
 			s.sync;
 
-      g = Group.new(s);
-
 			// instantiate main synth:
 			synths[\source] = Synth.new(\Fivesynth,
-				target:g, addAction:\addToHead, args:[
+				target:voiceGroup, addAction:\addToHead, args:[
 					\out, busses[\source]
 			]);
 
@@ -151,7 +149,7 @@ Fivesynth {
 			]);
 
 			synths[\main_out] = Synth.new(\patch_main,
-				target:g, addAction:\addToTail, args: [
+				target:voiceGroup, addAction:\addToTail, args: [
 					\in, busses[\main_out], \out, 0
 			]);
 
