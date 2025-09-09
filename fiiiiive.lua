@@ -7,10 +7,16 @@
 -- 1st crls key2->play key3+enc1->preset key3+key2->save
 -- all crcls key1/key2+enc2/enc3->ranges
 
-engine.name = "PolyPerc"
+engine.name = "Fivesynth"
+
+Fivesynth_setup = include 'lib/fivesynth'
+
+s = require 'sequins'
 
 local MusicUtil = require "musicutil"
 local midi_in_device
+local midi_out_device
+local voicekey = 0
 local xa5 = {}
 local ya5 = {}
 local xa12 = {} -- cartesian circles
@@ -56,12 +62,12 @@ local ranges = {}
 local range = {}
 local range2 = {}
 for i = 1, 5 do
-  range[i] = {}
+  range[i] = {0,4}
 end
 for i = 1, 5 do
-  range2[i] = {}
+  range2[i] = {0,4}
   for ii = 1, 5 do
-    range2[i][ii] = {}
+    range2[i][ii] = {0,4}
   end
 end
 screenpos = 0
@@ -77,6 +83,7 @@ local psetnum = 1
 local key2shift, key2shiftmv = 0
 local key3shift, key3shiftmv, key3pstmv = 0
 local arraynote = {}
+local iplay = 0
 seqplay = {"stop","play"}
 loopseq = {}
 noteoffs = {}
@@ -173,9 +180,9 @@ end
 
 -- screen transition
 local function scroll(d)
-  for i =1,8 do
-    screenpos = clamp(screenpos + (8*d), 0, 256)
-    clock.sleep(1/30)
+  for i =1,4 do
+    screenpos = clamp(screenpos + (16*d), 0, 256)
+    clock.sleep(1/24)
     redraw()
   end
   pos = clamp(pos+d,0,5)
@@ -245,7 +252,11 @@ function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset
       note = clamp(serie[val[3][counter[3]+1]]+(12*val[4][counter[4]+1])+24+noteoffset,0,127)
       vel = clamp(((val[1][counter[1]+1]-1)/4)*offset[2],0,127)
       midi_out_device:note_on(note,vel,params:get("midi_channel"))
-      noteoffs[note] = clock.run(fiveloopnoteoff,num,den,note,val[2][counter[2]+1])
+      
+      voicekey = (voicekey)%5+1
+      engine.trig(voicekey,MusicUtil.note_num_to_freq(note),vel/127)
+      
+      noteoffs[note] = clock.run(fiveloopnoteoff,num,den,note,val[2][counter[2]+1],voicekey)
       -- print("note: " .. note .. " vel: " .. vel)
     end
     redraw()
@@ -254,9 +265,10 @@ function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset
   end
 end
 
-function fiveloopnoteoff(num,den,note,dur)
+function fiveloopnoteoff(num,den,note,dur,voice)
   clock.sync((num/den*2)*dur)
   midi_out_device:note_off(note,0,1)
+  --engine.noteoff(voice)
 end
 
 -----------------------------------------------------------------------------------------------------------------
@@ -265,6 +277,10 @@ function init()
   
   midi_out_device = midi.connect(2)
   midi_out_device.event = midi_event
+  
+  Fivesynth_setup.add_params()
+  
+  params:add_separator("global")
   
   params:add{type = "number", id = "midi_out_device", name = "MIDI out Device", min = 1, max = 4, default = 1, action = function(value)
     midi_out_device.event = nil
@@ -288,9 +304,6 @@ function init()
   
   params:add{type = "option", id = "midi_channel", name = "MIDI out Channel", options = channels}
   params:add{type = "number", id = "bend_range", name = "Pitch Bend Range", min = 1, max = 48, default = 2}
-  
-  params:add_option("play","play",seqplay,1)
-  params:set_action("play", function(x) playloop(x) end)
   
   params:add_control("tempo_num", "tempo numerator", controlspec.new(1, 24, "lin", 1, 1, ""))
   params:set_action("tempo_num", function(x) tnum=x end)
@@ -364,6 +377,8 @@ function init()
   -- load default pset
   params:read()
   params:bang()
+  
+  engine.trig(1,120)
   
 end
 
@@ -586,7 +601,8 @@ function key(n, z)
       key2shiftmv = 0
     end
     if pos == 0 and z == 0 and key2shiftmv == 0 and key3shift == 0 then
-        params:set("play", (((seqplay-1) + 1) % 2) + 1)
+        iplay = (iplay + 1) % 2
+        playloop(iplay+1)
     elseif pos == 0 and z == 0 and key2shiftmv == 0 and key3shift == 1 then
       params:write(psetnum)
       key3shiftmv = 1
