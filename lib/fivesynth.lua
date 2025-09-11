@@ -8,9 +8,6 @@ function round_form(param,quant,form)
   return(util.round(param,quant)..form)
 end
 
--- first, we'll collect all of our commands into a table of norns-friendly ranges.
--- since all the voices share the same parameter names,
---   we can just iterate on this table and cleanly build 16 parameters across 9 voices.
 local specs = {
   {type = "separator", name = "synthesis"},
   {id = 'sub_div', name = 'sub division', type = 'number', min = 1, max = 10, default = 1},
