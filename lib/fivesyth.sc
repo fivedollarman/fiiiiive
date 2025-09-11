@@ -121,12 +121,6 @@ Fivesynth {
 
 			s.sync;
 
-			// instantiate main synth:
-			synths[\source] = Synth.new(\Fivesynth,
-				target:voiceGroup, addAction:\addToHead, args:[
-					\out, busses[\source]
-			]);
-
 			synths[\dry] = Synth.new(\patch_pan,
 				target:synths[\source], addAction:\addAfter, args:[
 					\in, busses[\source],
@@ -160,7 +154,8 @@ Fivesynth {
 		singleVoices[voiceKey].set(\stopGate, -1.05);
 		voiceParams[voiceKey][\freq] = freq;
 		voiceParams[voiceKey][\amp] = amp;
-		Synth.new(\Fivesynth, [\freq, freq, \amp, amp] ++ voiceParams[voiceKey].getPairs, singleVoices[voiceKey]);
+		Synth.new(\Fivesynth,
+		  [\freq, freq, \amp, amp, \out, busses[\source]] ++ voiceParams[voiceKey].getPairs, singleVoices[voiceKey]);
 	}
 
 	trigger { arg voiceKey, freq, amp;
@@ -204,6 +199,10 @@ Fivesynth {
 
 	setHz { arg val;
 		synths[\source].set(\hz, val);
+	}
+	
+	setMain { arg key, val;
+		synths[\main_out].set(key, val);
 	}
 
 	free {
