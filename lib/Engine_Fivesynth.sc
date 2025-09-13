@@ -11,11 +11,12 @@ Engine_Fivesynth : CroneEngine {
 	
 		kernel = Fivesynth.new(Crone.server);
 		
-	  this.addCommand(\trig, "sff", { arg msg;
+	  this.addCommand(\trig, "sfff", { arg msg;
 			var voiceKey = msg[1].asSymbol;
 			var freq = msg[2];
 			var amp = msg[3];
-			kernel.trigger(voiceKey,freq,amp);
+			var time = msg[4];
+			kernel.trigger(voiceKey,freq,amp,time);
 		});
 		
 		kernel.globalParams.keysValuesDo({ arg paramKey;
