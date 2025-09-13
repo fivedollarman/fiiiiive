@@ -254,9 +254,9 @@ function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset
       midi_out_device:note_on(note,vel,params:get("midi_channel"))
       
       voicekey = (voicekey)%5+1
-      engine.trig(voicekey,MusicUtil.note_num_to_freq(note),vel/127)
+      engine.trig(voicekey,MusicUtil.note_num_to_freq(note),vel/127,val[2][counter[2]+1])
       
-      noteoffs[note] = clock.run(fiveloopnoteoff,num,den,note,val[2][counter[2]+1],voicekey)
+      noteoffs[note] = clock.run(fiveloopnoteoff,num,den,note,val[2][counter[2]+1])
       -- print("note: " .. note .. " vel: " .. vel)
     end
     redraw()
@@ -265,10 +265,9 @@ function fiveloop(num, den, counter, counter2, range, range2, serie, val, valset
   end
 end
 
-function fiveloopnoteoff(num,den,note,dur,voice)
+function fiveloopnoteoff(num,den,note,dur)
   clock.sync((num/den*2)*dur)
   midi_out_device:note_off(note,0,1)
-  --engine.noteoff(voice)
 end
 
 -----------------------------------------------------------------------------------------------------------------
