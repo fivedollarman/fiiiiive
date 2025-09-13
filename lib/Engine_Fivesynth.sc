@@ -13,14 +13,14 @@ Engine_Fivesynth : CroneEngine {
 		
 	  this.addCommand(\trig, "sff", { arg msg;
 			var voiceKey = msg[1].asSymbol;
-			var freq = msg[2].asFloat;
-			var amp = msg[3].asFloat;
+			var freq = msg[2];
+			var amp = msg[3];
 			kernel.trigger(voiceKey,freq,amp);
 		});
 		
 		kernel.globalParams.keysValuesDo({ arg paramKey;
 			this.addCommand(paramKey, "sf", {arg msg;
-				kernel.setParam(msg[1].asSymbol,paramKey.asSymbol,msg[2].asFloat);
+				kernel.setParam(msg[1].asSymbol,paramKey.asSymbol,msg[2]);
 			});
 		});
 		
@@ -30,19 +30,19 @@ Engine_Fivesynth : CroneEngine {
 
 		this.addCommand(\set_level, "sf", { arg msg;
 			var voiceKey = msg[1].asSymbol;
-			var freq = msg[2].asFloat;
+			var freq = msg[2];
 			kernel.setLevel(voiceKey,freq);
 		});
 
 		this.addCommand(\set_pan, "sf", { arg msg;
 			var voiceKey = msg[1].asSymbol;
-			var freq = msg[2].asFloat;
+			var freq = msg[2];
 			kernel.setPan(voiceKey,freq);
 		});
 
 		this.addCommand(\set_main, "sf", { arg msg;
 			var key = msg[1].asSymbol;
-			var val = msg[2].asFloat;
+			var val = msg[2];
 			kernel.setMain(key,val);
 		});
 
