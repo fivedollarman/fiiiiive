@@ -10,7 +10,6 @@ Fivesynth {
 
 	var <synths;
 	var <busses;
-	var <g;
 	
 	*initClass {
 
@@ -22,7 +21,7 @@ Fivesynth {
 			s.waitForBoot {
 
 				SynthDef(\Fivesynth, {
-					arg out = 0, stopGate = 1,
+					arg out = 0, sustaintime = 1, stopGate = 1,
 					freq, sub_div,
 					cutoff, resonance, cutoff_env,
 					attack, release,
@@ -37,7 +36,7 @@ Fivesynth {
 					var mix = Mix.ar([pulse,saw,sub,noise]);
 
 					var envelope = EnvGen.kr(
-						envelope: Env.perc(attackTime: attack, releaseTime: release, level: 1),
+						envelope: Env.linen(attackTime: attack, sustainTime: sustaintime, releaseTime: release, level: 1),
 						gate: stopGate,
 						doneAction: 2
 					);
@@ -93,7 +92,6 @@ Fivesynth {
 
 			busses[\source] = Bus.audio(s, 1);
 			busses[\main_out] = Bus.audio(s, 2);
-			busses[\reverb_send] = Bus.audio(s, 2);
 			busses[\delay_send] = Bus.audio(s, 2);
 
 			// define patch synths, to control stereo field:
@@ -122,14 +120,14 @@ Fivesynth {
 			s.sync;
 
 			synths[\dry] = Synth.new(\patch_pan,
-				target:synths[\source], addAction:\addAfter, args:[
+				target:voiceGroup, addAction:\addAfter, args:[
 					\in, busses[\source],
 					\out, busses[\main_out],
-					\level, 1.0
+					\level, 0.0
 			]);
 
 			synths[\delay_send] = Synth.new(\patch_pan,
-				target:synths[\source], addAction:\addAfter, args:[
+				target:voiceGroup, addAction:\addAfter, args:[
 					\in, busses[\source],
 					\out, busses[\delay_send],
 					\level, 0.0
@@ -155,17 +153,17 @@ Fivesynth {
 		voiceParams[voiceKey][\freq] = freq;
 		voiceParams[voiceKey][\amp] = amp;
 		Synth.new(\Fivesynth,
-		  [\freq, freq, \amp, amp, \out, busses[\source]] ++ voiceParams[voiceKey].getPairs, singleVoices[voiceKey]);
+		  [\freq, freq, \amp, amp, \stopGate, 1, \out, busses[\source]] ++ voiceParams[voiceKey].getPairs, singleVoices[voiceKey]);
 	}
 
-	trigger { arg voiceKey, freq, amp;
+	trigger { arg voiceKey, freq, amp, time;
 		if( voiceKey == 'all',{
 			voiceKeys.do({ arg vK;
-				this.playVoice(vK, freq, amp);
+				this.playVoice(vK, freq, amp, time);
 			});
 		},
 		{
-			this.playVoice(voiceKey, freq, amp);
+			this.playVoice(voiceKey, freq, amp, time);
 		});
 	}
 
@@ -196,10 +194,6 @@ Fivesynth {
 	setPan { arg key, val;
 		synths[key].set(\pan, val);
 	}
-
-	setHz { arg val;
-		synths[\source].set(\hz, val);
-	}
 	
 	setMain { arg key, val;
 		synths[\main_out].set(key, val);
@@ -207,7 +201,6 @@ Fivesynth {
 
 	free {
 	  voiceGroup.free;
-		g.free;
 		busses.do({arg bus; bus.free;});
 	}
 
