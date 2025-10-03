@@ -15,17 +15,10 @@ local specs = {
   {type = "separator", name = "synthesis"},
   {id = 'sub_div', name = 'sub division', type = 'number', min = 1, max = 10, default = 1},
   {id = 'noise_amp', name = 'noise level', type = 'control', min = 0, max = 2, warp = 'lin', default = 0, formatter = function(param) return (round_form(param:get()*100,1,"%")) end},
-  {id = 'cutoff', name = 'filter cutoff', type = 'control', min = 20, max = 24000, warp = 'exp', default = 1200, formatter = function(param) return (round_form(param:get(),0.01," hz")) end},
-  {id = 'cutoff_env', name = 'filter envelope', type = 'number', min = 0, max = 1, default = 1, formatter = function(param) return (param:get() == 1 and "on" or "off") end},
-  {id = 'resonance', name = 'filter q', type = 'control', min = 0, max = 4, warp = 'lin', default = 2, formatter = function(param) return (round_form(util.linlin(0,4,0,100,param:get()),1,"%")) end},
+  {id = 'coef', name = 'pluck coef', type = 'control', min = -0.99, max = 0.99, warp = 'lin', default = 0.5},
   {id = 'attack', name = 'attack', type = 'control', min = 0.001, max = 10, warp = 'exp', default = 0, formatter = function(param) return (round_form(param:get(),0.01," s")) end},
   {id = 'release', name = 'release', type = 'control', min = 0.001, max = 10, warp = 'exp', default = 0.3, formatter = function(param) return (round_form(param:get(),0.01," s")) end},
-  {id = 'pan', name = 'pan', type = 'control', min = -1, max = 1, warp = 'lin', default = 0, formatter = Formatters.bipolar_as_pan_widget},
-  {type = "separator", name = "slews"},
-  {id = 'freq_slew', name = 'frequency slew', type = 'control', min = 0.001, max = 10, warp = 'exp', default = 0, formatter = function(param) return (round_form(param:get(),0.01," s")) end},
-  {id = 'amp_slew', name = 'level slew', type = 'control', min = 0.001, max = 10, warp = 'exp', default = 0, formatter = function(param) return (round_form(param:get(),0.01," s")) end},
-  {id = 'noise_slew', name = 'noise level slew', type = 'control', min = 0.001, max = 10, warp = 'exp', default = 0.05, formatter = function(param) return (round_form(param:get(),0.01," s")) end},
-  {id = 'pan_slew', name = 'pan slew', type = 'control', min = 0.001, max = 10, warp = 'exp', default = 0.5, formatter = function(param) return (round_form(param:get(),0.01," s")) end},
+  {id = 'slew', name = 'frequency slew', type = 'control', min = 0.001, max = 10, warp = 'exp', default = 0, formatter = function(param) return (round_form(param:get(),0.01," s")) end}
 }
 
 -- initialize parameters:
@@ -87,6 +80,8 @@ function Fivesynth.add_params()
   local cs_fc1 = controlspec.new(20, 20000, "exp", 0, 600, "Hz")
   local cs_fc2 = controlspec.new(20, 20000, "exp", 0, 1800, "Hz")
   local cs_pan = controlspec.new(-1, 1, "lin", 0.001, 0, nil, 1 / 200)
+  local gain = controlspec.new(0, 1000, "exp", 0.1, 1)
+  local level = controlspec.new(0, 1, "lin", 0.01, 1)
 
   local frm_percent = function(param)
     return ((param:get() * 100) .. "%")
@@ -99,7 +94,7 @@ function Fivesynth.add_params()
     controlspec = cs_amp,
     formatter = frm_percent,
     action = function(x)
-      engine.set_level("dry", x)
+      engine.set_dry("level", x)
     end,
   })
 
@@ -110,29 +105,29 @@ function Fivesynth.add_params()
     controlspec = cs_amp,
     formatter = frm_percent,
     action = function(x)
-      engine.set_level("delay_send", x)
+      engine.set_send("level", x)
     end,
   })
 
   params:add({
     type = "control",
     id = "dry_pan",
-    name = "dry",
+    name = "dry pan",
     controlspec = cs_pan,
     formatter = Formatters.bipolar_as_pan_widget,
     action = function(x)
-      engine.set_pan("dry", x)
+      engine.set_dry("pan", x)
     end,
   })
 
   params:add({
     type = "control",
     id = "delay_pan",
-    name = "delay",
+    name = "delay pan",
     controlspec = cs_pan,
     formatter = Formatters.bipolar_as_pan_widget,
     action = function(x)
-      engine.set_pan("delay_send", x)
+      engine.set_send("pan", x)
     end,
   })
 
@@ -195,7 +190,25 @@ function Fivesynth.add_params()
     end,
   })
 
-  params:set("delay_level", 0)
+  params:add({
+    type = "control",
+    id = "gain",
+    name = "gain",
+    controlspec = gain,
+    action = function(x)
+      engine.set_main("gain", x)
+    end,
+  })
+
+  params:add({
+    type = "control",
+    id = "level",
+    name = "level",
+    controlspec = level,
+    action = function(x)
+      engine.set_main("level", x)
+    end,
+  })
   
   -- activate the parameters' current values:
   params:bang()
