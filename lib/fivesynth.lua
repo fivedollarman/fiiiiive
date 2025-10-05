@@ -83,6 +83,8 @@ function Fivesynth.add_params()
   local cs_fc2 = controlspec.new(20, 20000, "exp", 0, 1800, "Hz")
   local cs_pan = controlspec.new(-1, 1, "lin", 0.001, 0, nil, 1 / 200)
   local gain = controlspec.new(0, 1000, "exp", 0.1, 1)
+  local time = controlspec.new(0, 4, "lin", 0.01, 0.1)
+  local decay = controlspec.new(0, 8, "lin", 0.01, 1)
   local level = controlspec.new(0, 1, "lin", 0.01, 1)
 
   local frm_percent = function(param)
@@ -130,6 +132,52 @@ function Fivesynth.add_params()
     formatter = Formatters.bipolar_as_pan_widget,
     action = function(x)
       engine.set_send("pan", x)
+    end,
+  })
+
+  params:add({
+    type = "separator",
+    id = "delay_separator",
+    name = "delay",
+  })
+
+  params:add({
+    type = "control",
+    id = "delay_time",
+    name = "delay",
+    controlspec = time,
+    action = function(x)
+      engine.set_delay("delay", x)
+    end,
+  })
+
+  params:add({
+    type = "control",
+    id = "delay_decay",
+    name = "decay",
+    controlspec = decay,
+    action = function(x)
+      engine.set_delay("decay", x)
+    end,
+  })
+
+  params:add({
+    type = "control",
+    id = "lfo_freq",
+    name = "lfoF",
+    controlspec = time,
+    action = function(x)
+      engine.set_delay("lfoF", x)
+    end,
+  })
+
+  params:add({
+    type = "control",
+    id = "lfo_amp",
+    name = "lfoA",
+    controlspec = level,
+    action = function(x)
+      engine.set_delay("lfoA", x)
     end,
   })
 
