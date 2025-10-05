@@ -108,8 +108,8 @@ Fivesynth {
 			]);
 
 			synths[\delay] = SynthDef.new(\delay, {
-				arg in, out, lfof=0.025, lfoa=0.003, delay=0.2, decay=5, level=1;
-			    var lfo = LFNoise2.kr(lfof, lfoa);
+				arg in, out, lfoF=0.02, lfoA=0.001, delay=0.2, decay=5, level=1;
+			    var lfo = LFNoise2.kr(lfoF, lfoA);
 				Out.ar(out, CombL.ar(In.ar(in, 2), 2, delay + lfo, decay, level));
 			}).play(target:synths[\delay_send], addAction:\addAfter, args:[
 				\in, busses[\delay_send], \out, busses[\main_out]
