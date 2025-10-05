@@ -30,6 +30,8 @@ Fivesynth {
 
 		globalParams = Dictionary.newFrom([
 			\sub_div, 2,
+			\filtQ, 25,
+			\freqQ, 1,
 			\noise_amp, 0,
 			\coef, 0.75,
 			\attack, 0,
