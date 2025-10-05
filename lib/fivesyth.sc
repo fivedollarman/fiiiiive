@@ -52,15 +52,15 @@ Fivesynth {
 
 			SynthDef(\Fivesynth, {
 					arg out, dur, stopGate = 1, freq,
-					sub_div, coef,
+					sub_div, coef, filt,
 					attack, release, amp, noise_amp,
 					slew;
 
 					var slewed_freq = freq.lag3(slew);
-				var plu = Pluck.ar(WhiteNoise.ar(amp/4), Trig.kr(amp*4,0.05), 8.reciprocal, slewed_freq.reciprocal, (dur*4)+release, (coef + (freq.reciprocal*(64*(1-coef)))).clip(-0.965, 0.965));
+				  var plu = Pluck.ar(WhiteNoise.ar(amp/4), Trig.kr(amp*4,0.05), 8.reciprocal, slewed_freq.reciprocal, (dur*4)+release, (coef + (freq.reciprocal*(64*(1-coef)))).clip(-0.965, 0.965));
 				    var sub = SinOsc.ar(slewed_freq/sub_div, 1pi, freq.reciprocal);
 					var noise = WhiteNoise.ar(mul: noise_amp.lag3(slew));
-					var mix = Mix.ar([plu,sub,noise]);
+				var mix = LPF.ar(Mix.ar([plu,sub,noise]), filt * slewed_freq);
 
 					var envelope = EnvGen.kr(
 						envelope: Env.linen(attackTime: attack, sustainTime: dur/4, releaseTime: release, level: 1), gate: stopGate, doneAction: 2);
@@ -106,7 +106,7 @@ Fivesynth {
 			]);
 
 			synths[\delay] = SynthDef.new(\delay, {
-				arg in, out, lfof=0.125, lfoa=0.06, delay=0.2, decay=5, level=1;
+				arg in, out, lfof=0.025, lfoa=0.003, delay=0.2, decay=5, level=1;
 			    var lfo = LFNoise2.kr(lfof, lfoa);
 				Out.ar(out, CombL.ar(In.ar(in, 2), 2, delay + lfo, decay, level));
 			}).play(target:synths[\delay_send], addAction:\addAfter, args:[
