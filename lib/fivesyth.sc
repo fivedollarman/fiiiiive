@@ -168,6 +168,10 @@ Fivesynth {
 	setSend { arg key, val;
 		synths[\delay_send].set(key, val);
 	}
+	
+	setDelay { arg key, val;
+		synths[\delay].set(key, val);
+	}
 
 	setMain { arg key, val;
 		synths[\main_out].set(key, val);
