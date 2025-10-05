@@ -177,7 +177,7 @@ function Fivesynth.add_params()
     name = "lfoA",
     controlspec = level,
     action = function(x)
-      engine.set_delay("lfoA", x)
+      engine.set_delay("lfoA", x/10)
     end,
   })
 
