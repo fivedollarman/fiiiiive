@@ -52,15 +52,15 @@ Fivesynth {
 
 			SynthDef(\Fivesynth, {
 					arg out, dur, stopGate = 1, freq,
-					sub_div, coef, filt,
+					freqQ, filtQ, sub_div, coef,
 					attack, release, amp, noise_amp,
 					slew;
 
 					var slewed_freq = freq.lag3(slew);
-				  var plu = Pluck.ar(WhiteNoise.ar(amp/4), Trig.kr(amp*4,0.05), 8.reciprocal, slewed_freq.reciprocal, (dur*4)+release, (coef + (freq.reciprocal*(64*(1-coef)))).clip(-0.965, 0.965));
+				  var plu = Pluck.ar(WhiteNoise.ar(amp/4), Trig.kr(amp*4,0.05), 8.reciprocal, (slewed_freq * freqQ).reciprocal, (dur*4)+release, (coef + (freq.reciprocal*(64*(1-coef)))).clip(-0.965, 0.965));
 				    var sub = SinOsc.ar(slewed_freq/sub_div, 1pi, freq.reciprocal);
 					var noise = WhiteNoise.ar(mul: noise_amp.lag3(slew));
-				var mix = LPF.ar(Mix.ar([plu,sub,noise]), filt * slewed_freq);
+				var mix = LPF.ar(Mix.ar([plu,sub,noise]), filtQ * slewed_freq);
 
 					var envelope = EnvGen.kr(
 						envelope: Env.linen(attackTime: attack, sustainTime: dur/4, releaseTime: release, level: 1), gate: stopGate, doneAction: 2);
