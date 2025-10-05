@@ -16,6 +16,7 @@ local specs = {
   {id = 'sub_div', name = 'sub division', type = 'number', min = 1, max = 10, default = 1},
   {id = 'noise_amp', name = 'noise level', type = 'control', min = 0, max = 1, warp = 'lin', default = 0, formatter = function(param) return (round_form(param:get(),0.01,"a")) end},
   {id = 'coef', name = 'pluck coef', type = 'control', min = -0.99, max = 0.99, warp = 'lin', default = 0.5},
+  {id = 'filt', name = 'filt Q', type = 'control', min = 1, max = 50, warp = 'lin', default = 25},
   {id = 'attack', name = 'attack', type = 'control', min = 0.001, max = 10, warp = 'exp', default = 0, formatter = function(param) return (round_form(param:get(),0.01," s")) end},
   {id = 'release', name = 'release', type = 'control', min = 0.001, max = 10, warp = 'exp', default = 0.3, formatter = function(param) return (round_form(param:get(),0.01," s")) end},
   {id = 'slew', name = 'frequency slew', type = 'control', min = 0.001, max = 10, warp = 'exp', default = 0, formatter = function(param) return (round_form(param:get(),0.01," s")) end}
