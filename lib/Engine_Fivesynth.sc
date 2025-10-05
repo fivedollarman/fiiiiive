@@ -40,6 +40,12 @@ Engine_Fivesynth : CroneEngine {
 			var val = msg[2];
 			kernel.setSend(key,val);
 		});
+		
+		this.addCommand(\set_delay, "sf", { arg msg;
+			var key = msg[1].asSymbol;
+			var val = msg[2];
+			kernel.setDelay(key,val);
+		});
 
 		this.addCommand(\set_main, "sf", { arg msg;
 			var key = msg[1].asSymbol;
