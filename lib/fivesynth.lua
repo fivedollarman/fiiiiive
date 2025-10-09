@@ -82,8 +82,8 @@ function Fivesynth.add_params()
   local cs_fc1 = controlspec.new(20, 20000, "exp", 0, 600, "Hz")
   local cs_fc2 = controlspec.new(20, 20000, "exp", 0, 1800, "Hz")
   local cs_pan = controlspec.new(-1, 1, "lin", 0.001, 0, nil, 1 / 200)
-  local gain = controlspec.new(0, 1000, "exp", 0.1, 1)
-  local time = controlspec.new(0, 4, "lin", 0.01, 0.1)
+  local gain = controlspec.new(1, 1000, "exp", 1, 1)
+  local delay = controlspec.new(0.01, 4, "lin", 0.01, 0.1)
   local decay = controlspec.new(0, 8, "lin", 0.01, 1)
   local level = controlspec.new(0, 1, "lin", 0.01, 1)
 
@@ -145,7 +145,7 @@ function Fivesynth.add_params()
     type = "control",
     id = "delay_time",
     name = "delay",
-    controlspec = time,
+    controlspec = delay,
     action = function(x)
       engine.set_delay("delay", x)
     end,
