@@ -14,7 +14,7 @@ end
 local specs = {
   {type = "separator", name = "synthesis"},
   {id = 'sub_div', name = 'sub division', type = 'number', min = 1, max = 5, default = 1},
-  {id = 'freqQ', name = 'octave', type = 'number', min = 1, max = 5, default = 1},
+  {id = 'freqQ', name = 'octave', type = 'number', min = -5, max = 5, default = 0},
   {id = 'noise_amp', name = 'noise level', type = 'control', min = 0, max = 1, warp = 'lin', default = 0, formatter = function(param) return (round_form(param:get(),0.01,"a")) end},
   {id = 'coef', name = 'pluck coef', type = 'control', min = -0.99, max = 0.99, warp = 'lin', default = 0.5},
   {id = 'filtQ', name = 'filt Q', type = 'control', min = 1, max = 50, warp = 'lin', default = 25},
